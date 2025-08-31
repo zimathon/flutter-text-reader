@@ -1,0 +1,5 @@
+# App identifier
+package_name("com.vibevoice.textreader")
+
+# Path to the json key file for Google Play API access
+json_key_file(ENV["GOOGLE_PLAY_JSON_KEY_PATH"] || "fastlane/play-store-key.json")
