@@ -277,7 +277,32 @@ class AudioPlaybackService extends audio_service.BaseAudioHandler {
     }
   }
   
-  Future<void> seekForward(Duration offset) async {
+  // BaseAudioHandler overrides with correct signatures
+  @override
+  Future<void> seekForward(bool begin) async {
+    if (begin) {
+      await _seekForwardByDuration(const Duration(seconds: 30));
+    }
+  }
+  
+  @override
+  Future<void> seekBackward(bool begin) async {
+    if (begin) {
+      await _seekBackwardByDuration(const Duration(seconds: 30));
+    }
+  }
+  
+  // Public methods for seeking with custom duration
+  Future<void> seekForwardByDuration(Duration offset) async {
+    await _seekForwardByDuration(offset);
+  }
+  
+  Future<void> seekBackwardByDuration(Duration offset) async {
+    await _seekBackwardByDuration(offset);
+  }
+  
+  // Internal implementation
+  Future<void> _seekForwardByDuration(Duration offset) async {
     final newPosition = _audioPlayer.position + offset;
     final duration = _audioPlayer.duration ?? Duration.zero;
     
@@ -289,7 +314,7 @@ class AudioPlaybackService extends audio_service.BaseAudioHandler {
     }
   }
   
-  Future<void> seekBackward(Duration offset) async {
+  Future<void> _seekBackwardByDuration(Duration offset) async {
     final newPosition = _audioPlayer.position - offset;
     
     if (newPosition > Duration.zero) {
@@ -399,13 +424,12 @@ class AudioPlaybackService extends audio_service.BaseAudioHandler {
   Future<void> skipToPrevious() => playPrevious();
   
   @override
-  Future<void> fastForward() => seekForward(const Duration(seconds: 30));
+  Future<void> fastForward() => seekForward(true);
   
   @override
-  Future<void> rewind() => seekBackward(const Duration(seconds: 30));
+  Future<void> rewind() => seekBackward(true);
   
-  @override
-  Future<void> setSpeed(double speed) => this.setSpeed(speed);
+  // setSpeed is already defined above, no need to override
   
   // Clean up
   Future<void> dispose() async {
