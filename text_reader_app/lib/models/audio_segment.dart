@@ -136,54 +136,86 @@ class TextChunk {
     required this.totalChunks,
   });
 
-  static List<TextChunk> splitText(String text, {int maxChunkSize = 5000}) {
+  static List<TextChunk> splitText(String text, {int maxChunkSize = 1000}) {
     if (text.isEmpty) return [];
 
     final chunks = <TextChunk>[];
-    final paragraphs = text.split(RegExp(r'\n\n+'));
-    
-    var currentChunk = StringBuffer();
-    var currentStartPosition = 0;
     var currentPosition = 0;
     var chunkIndex = 0;
-
-    for (final paragraph in paragraphs) {
-      final paragraphWithNewlines = '$paragraph\n\n';
-      final paragraphLength = paragraphWithNewlines.length;
-
-      if (currentChunk.length + paragraphLength > maxChunkSize && 
-          currentChunk.isNotEmpty) {
-        final chunkText = currentChunk.toString().trimRight();
-        chunks.add(TextChunk(
-          id: 'chunk_$chunkIndex',
-          text: chunkText,
-          startPosition: currentStartPosition,
-          endPosition: currentPosition,
-          chunkIndex: chunkIndex,
-          totalChunks: 0,
-        ));
+    
+    // Japanese and English sentence endings
+    final sentenceEndings = RegExp(r'[。！？\.!?]\s*');
+    final paragraphBreaks = RegExp(r'\n\n+');
+    
+    while (currentPosition < text.length) {
+      var endPosition = currentPosition + maxChunkSize;
+      
+      // Don't exceed text length
+      if (endPosition >= text.length) {
+        endPosition = text.length;
+      } else {
+        // Try to find a good break point
+        var searchStart = (currentPosition + maxChunkSize * 0.8).round();
+        searchStart = searchStart.clamp(currentPosition, text.length - 1);
         
-        chunkIndex++;
-        currentChunk.clear();
-        currentStartPosition = currentPosition;
+        // First, try to break at paragraph
+        final paragraphMatch = paragraphBreaks.firstMatch(
+          text.substring(searchStart, endPosition),
+        );
+        
+        if (paragraphMatch != null) {
+          endPosition = searchStart + paragraphMatch.end;
+        } else {
+          // Try to break at sentence ending
+          final sentenceMatches = sentenceEndings.allMatches(
+            text.substring(searchStart, endPosition),
+          );
+          
+          if (sentenceMatches.isNotEmpty) {
+            final lastMatch = sentenceMatches.last;
+            endPosition = searchStart + lastMatch.end;
+          } else {
+            // Look for any punctuation or space
+            final punctuationIndex = text.lastIndexOf(
+              RegExp(r'[、,\s]'),
+              endPosition - 1,
+              currentPosition + (maxChunkSize * 0.5).round(),
+            );
+            
+            if (punctuationIndex > currentPosition) {
+              endPosition = punctuationIndex + 1;
+            }
+          }
+        }
       }
-
-      currentChunk.write(paragraphWithNewlines);
-      currentPosition += paragraphLength;
+      
+      // Extract chunk text
+      final chunkText = text.substring(currentPosition, endPosition).trim();
+      
+      if (chunkText.isNotEmpty) {
+        chunks.add(TextChunk(
+          id: 'chunk_${chunkIndex.toString().padLeft(3, '0')}',
+          text: chunkText,
+          startPosition: currentPosition,
+          endPosition: endPosition,
+          chunkIndex: chunkIndex,
+          totalChunks: 0, // Will be updated below
+        ));
+        chunkIndex++;
+      }
+      
+      currentPosition = endPosition;
+      
+      // Skip whitespace at the beginning of next chunk
+      while (currentPosition < text.length && 
+             (text[currentPosition] == ' ' || 
+              text[currentPosition] == '\n' || 
+              text[currentPosition] == '\t')) {
+        currentPosition++;
+      }
     }
-
-    if (currentChunk.isNotEmpty) {
-      final chunkText = currentChunk.toString().trimRight();
-      chunks.add(TextChunk(
-        id: 'chunk_$chunkIndex',
-        text: chunkText,
-        startPosition: currentStartPosition,
-        endPosition: currentPosition,
-        chunkIndex: chunkIndex,
-        totalChunks: 0,
-      ));
-    }
-
+    
+    // Update total chunks count
     final totalChunks = chunks.length;
     return chunks.map((chunk) => TextChunk(
       id: chunk.id,
@@ -193,5 +225,58 @@ class TextChunk {
       chunkIndex: chunk.chunkIndex,
       totalChunks: totalChunks,
     )).toList();
+  }
+  
+  static List<TextChunk> splitTextAdvanced(
+    String text, {
+    int maxChunkSize = 1000,
+    int overlapSize = 50,
+  }) {
+    final chunks = splitText(text, maxChunkSize: maxChunkSize);
+    
+    if (overlapSize <= 0 || chunks.length <= 1) {
+      return chunks;
+    }
+    
+    // Add overlap between chunks for better context
+    final overlappedChunks = <TextChunk>[];
+    
+    for (int i = 0; i < chunks.length; i++) {
+      var chunkText = chunks[i].text;
+      var startPos = chunks[i].startPosition;
+      var endPos = chunks[i].endPosition;
+      
+      // Add overlap from previous chunk
+      if (i > 0) {
+        final prevChunk = chunks[i - 1];
+        final overlapStart = (prevChunk.text.length - overlapSize)
+            .clamp(0, prevChunk.text.length);
+        final overlap = prevChunk.text.substring(overlapStart);
+        chunkText = '$overlap $chunkText';
+        startPos = (prevChunk.endPosition - overlap.length)
+            .clamp(0, prevChunk.endPosition);
+      }
+      
+      // Add overlap from next chunk
+      if (i < chunks.length - 1) {
+        final nextChunk = chunks[i + 1];
+        final overlapEnd = overlapSize.clamp(0, nextChunk.text.length);
+        final overlap = nextChunk.text.substring(0, overlapEnd);
+        chunkText = '$chunkText $overlap';
+        endPos = (nextChunk.startPosition + overlap.length)
+            .clamp(nextChunk.startPosition, text.length);
+      }
+      
+      overlappedChunks.add(TextChunk(
+        id: chunks[i].id,
+        text: chunkText,
+        startPosition: startPos,
+        endPosition: endPos,
+        chunkIndex: i,
+        totalChunks: chunks.length,
+      ));
+    }
+    
+    return overlappedChunks;
   }
 }
