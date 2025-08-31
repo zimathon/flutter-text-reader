@@ -9,6 +9,8 @@ import 'package:text_reader_app/services/audio_service_init.dart';
 import 'package:text_reader_app/services/book_service.dart';
 import 'package:text_reader_app/services/storage_service.dart';
 import 'package:text_reader_app/services/tts_service.dart';
+import 'package:text_reader_app/view_models/book_list_vm.dart' as book_list_vm;
+import 'package:text_reader_app/view_models/settings_vm.dart' as settings_vm;
 
 // Providers
 final ttsServiceProvider = Provider<TtsService>((ref) {
@@ -142,8 +144,8 @@ class PlayerViewModel extends StateNotifier<PlayerState> {
   Future<void> _initialize() async {
     try {
       _ttsService = _ref.read(ttsServiceProvider);
-      _bookService = _ref.read(bookServiceProvider);
-      _storageService = _ref.read(storageServiceProvider);
+      _bookService = _ref.read(book_list_vm.bookServiceProvider);
+      _storageService = _ref.read(settings_vm.storageServiceProvider);
       
       await _ttsService.initialize();
       await _bookService.initialize();
@@ -310,7 +312,7 @@ class PlayerViewModel extends StateNotifier<PlayerState> {
     if (_audioService == null) return;
     
     try {
-      await _audioService!.seekForward(const Duration(seconds: 30));
+      await _audioService!.seekForwardByDuration(const Duration(seconds: 30));
     } catch (e) {
       state = state.copyWith(error: 'Failed to seek forward: $e');
     }
@@ -320,7 +322,7 @@ class PlayerViewModel extends StateNotifier<PlayerState> {
     if (_audioService == null) return;
     
     try {
-      await _audioService!.seekBackward(const Duration(seconds: 30));
+      await _audioService!.seekBackwardByDuration(const Duration(seconds: 30));
     } catch (e) {
       state = state.copyWith(error: 'Failed to seek backward: $e');
     }

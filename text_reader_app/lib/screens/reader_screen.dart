@@ -5,7 +5,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:text_reader_app/models/book.dart';
 import 'package:text_reader_app/view_models/player_vm.dart';
-import 'package:text_reader_app/view_models/settings_vm.dart';
+import 'package:text_reader_app/view_models/settings_vm.dart' as settings_vm;
 import 'package:text_reader_app/widgets/playback_controls.dart';
 import 'package:text_reader_app/widgets/text_display.dart';
 import 'package:text_reader_app/widgets/chapter_drawer.dart';
@@ -22,7 +22,7 @@ class ReaderScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final playerState = ref.watch(playerViewModelProvider);
     final playerViewModel = ref.read(playerViewModelProvider.notifier);
-    final settings = ref.watch(settingsViewModelProvider);
+    final settings = ref.watch(settings_vm.settingsViewModelProvider);
     final playbackPosition = ref.watch(playbackPositionProvider);
     
     final scrollController = useScrollController();
@@ -84,7 +84,7 @@ class ReaderScreen extends HookConsumerWidget {
     
     return Scaffold(
       key: scaffoldKey,
-      backgroundColor: settings.themeMode == ThemeMode.dark
+      backgroundColor: settings.themeMode == settings_vm.ThemeMode.dark
           ? Colors.black
           : Theme.of(context).colorScheme.surface,
       appBar: isControlsVisible.value
@@ -208,7 +208,7 @@ class ReaderScreen extends HookConsumerWidget {
                   ],
                 ),
               ],
-              backgroundColor: settings.themeMode == ThemeMode.dark
+              backgroundColor: settings.themeMode == settings_vm.ThemeMode.dark
                   ? Colors.black87
                   : null,
             )

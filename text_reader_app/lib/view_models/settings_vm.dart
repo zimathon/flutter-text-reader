@@ -3,6 +3,11 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:text_reader_app/services/storage_service.dart';
 import 'package:text_reader_app/services/tts_service.dart';
 
+// Storage service provider
+final storageServiceProvider = Provider<StorageService>((ref) {
+  return StorageService();
+});
+
 // Settings providers
 final settingsViewModelProvider = 
     StateNotifierProvider<SettingsViewModel, SettingsState>((ref) {

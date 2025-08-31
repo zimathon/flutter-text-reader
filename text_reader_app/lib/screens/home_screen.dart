@@ -145,7 +145,7 @@ class HomeScreen extends HookConsumerWidget {
                           ref.read(searchQueryProvider.notifier).state = '';
                         }
                       : () async {
-                          await _importBooks(context, bookListViewModel);
+                          await _importBooks(context, bookListViewModel, ref);
                         },
                 )
               : RefreshIndicator(
@@ -187,7 +187,7 @@ class HomeScreen extends HookConsumerWidget {
                 ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          await _importBooks(context, bookListViewModel);
+          await _importBooks(context, bookListViewModel, ref);
         },
         icon: const Icon(Icons.add),
         label: const Text('ファイルを追加'),
@@ -215,7 +215,7 @@ class HomeScreen extends HookConsumerWidget {
     );
   }
   
-  Future<void> _importBooks(BuildContext context, BookListViewModel viewModel) async {
+  Future<void> _importBooks(BuildContext context, BookListViewModel viewModel, WidgetRef ref) async {
     final importedBooks = await viewModel.importBooks();
     
     if (context.mounted) {
@@ -227,7 +227,7 @@ class HomeScreen extends HookConsumerWidget {
               label: '開く',
               onPressed: () {
                 if (importedBooks.isNotEmpty) {
-                  _openBook(context, ProviderScope.containerOf(context), importedBooks.first);
+                  _openBook(context, ref, importedBooks.first);
                 }
               },
             ),

@@ -22,7 +22,7 @@ class PlaybackState {
   final String? errorMessage;
   final bool isBuffering;
 
-  PlaybackState({
+  const PlaybackState({
     this.status = PlaybackStatus.idle,
     this.position = Duration.zero,
     this.duration = Duration.zero,
