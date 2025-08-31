@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:text_reader_app/models/audio_segment.dart';
+import 'package:text_reader_app/services/vibevoice_service.dart';
 
 enum TtsEngine {
   androidNative,
@@ -12,10 +13,15 @@ enum TtsEngine {
 
 class TtsService {
   final FlutterTts _flutterTts;
+  final VibeVoiceService _vibeVoiceService;
   bool _isInitialized = false;
   
-  TtsService({FlutterTts? flutterTts}) 
-      : _flutterTts = flutterTts ?? FlutterTts();
+  TtsService({
+    FlutterTts? flutterTts,
+    VibeVoiceService? vibeVoiceService,
+  }) : _flutterTts = flutterTts ?? FlutterTts(),
+       _vibeVoiceService = vibeVoiceService ?? VibeVoiceService();
+  
   TtsEngine _currentEngine = TtsEngine.androidNative;
   
   // TTS Settings
@@ -40,6 +46,16 @@ class TtsService {
     
     try {
       await _initializeFlutterTts();
+      await _vibeVoiceService.initialize();
+      
+      // Check VibeVoice availability and switch if available
+      if (await _vibeVoiceService.checkAvailability()) {
+        _currentEngine = TtsEngine.vibeVoice;
+        print('VibeVoice is available, using as primary TTS engine');
+      } else {
+        print('VibeVoice not available, using Android native TTS');
+      }
+      
       _isInitialized = true;
     } catch (e) {
       print('Error initializing TTS service: $e');
@@ -134,8 +150,12 @@ class TtsService {
       if (_currentEngine == TtsEngine.androidNative) {
         return await _generateWithAndroidTts(segment);
       } else {
-        // VibeVoice will be implemented in Task 6
-        throw UnimplementedError('VibeVoice not yet implemented');
+        // Use VibeVoice
+        return await _vibeVoiceService.generateAudioSegment(
+          segment,
+          speed: _speechRate,
+          pitch: _pitch,
+        );
       }
     } catch (e) {
       return segment.copyWith(
@@ -300,6 +320,25 @@ class TtsService {
   
   void switchEngine(TtsEngine engine) {
     _currentEngine = engine;
+    
+    // If switching to VibeVoice, check availability
+    if (engine == TtsEngine.vibeVoice && !_vibeVoiceService.isAvailable) {
+      print('VibeVoice not available, falling back to Android native');
+      _currentEngine = TtsEngine.androidNative;
+    }
+  }
+  
+  Future<bool> checkVibeVoiceAvailability() async {
+    return await _vibeVoiceService.checkAvailability();
+  }
+  
+  Future<void> updateVibeVoiceUrl(String url) async {
+    await _vibeVoiceService.updateApiUrl(url);
+    
+    // Re-check availability
+    if (await _vibeVoiceService.checkAvailability()) {
+      print('VibeVoice is now available at: $url');
+    }
   }
   
   TtsEngine get currentEngine => _currentEngine;
@@ -368,6 +407,7 @@ class TtsService {
   Future<void> dispose() async {
     await stop();
     clearQueue();
+    _vibeVoiceService.dispose();
     _isInitialized = false;
   }
 }
