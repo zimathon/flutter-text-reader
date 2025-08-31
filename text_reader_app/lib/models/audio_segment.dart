@@ -176,14 +176,16 @@ class TextChunk {
             endPosition = searchStart + lastMatch.end;
           } else {
             // Look for any punctuation or space
-            final punctuationIndex = text.lastIndexOf(
-              RegExp(r'[、,\s]'),
-              endPosition - 1,
-              currentPosition + (maxChunkSize * 0.5).round(),
-            );
-            
-            if (punctuationIndex > currentPosition) {
-              endPosition = punctuationIndex + 1;
+            final searchStart = currentPosition + (maxChunkSize * 0.5).round();
+            final searchEnd = endPosition - 1;
+            if (searchStart < searchEnd) {
+              final searchRegion = text.substring(searchStart, searchEnd);
+              final punctuationMatches = RegExp(r'[、,\s]').allMatches(searchRegion);
+              
+              if (punctuationMatches.isNotEmpty) {
+                final lastMatch = punctuationMatches.last;
+                endPosition = searchStart + lastMatch.end;
+              }
             }
           }
         }
