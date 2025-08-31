@@ -146,21 +146,34 @@ class StorageService {
     }
   }
 
-  Future<bool> saveSettings(Map<String, dynamic> settings) async {
+  Future<bool> saveSettings(String key, Map<String, dynamic> settings) async {
     _ensureInitialized();
     try {
       final String settingsJson = json.encode(settings);
-      return await _prefs.setString(_settingsKey, settingsJson);
+      return await _prefs.setString(key, settingsJson);
     } catch (e) {
       print('Error saving settings: $e');
       return false;
+    }
+  }
+  
+  Future<Map<String, dynamic>?> getSettings(String key) async {
+    _ensureInitialized();
+    final String? settingsJson = _prefs.getString(key);
+    if (settingsJson == null) return null;
+    
+    try {
+      return json.decode(settingsJson) as Map<String, dynamic>;
+    } catch (e) {
+      print('Error getting settings: $e');
+      return null;
     }
   }
 
   Future<bool> updateSetting(String key, dynamic value) async {
     final settings = await loadSettings();
     settings[key] = value;
-    return await saveSettings(settings);
+    return await saveSettings(_settingsKey, settings);
   }
 
   Future<List<int>> getBookmarks(String bookId) async {
