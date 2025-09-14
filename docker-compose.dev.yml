@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  api:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: vibevoice-api-dev
+    ports:
+      - "5000:5000"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DEBUG=true
+      - CORS_ORIGINS=*
+    volumes:
+      - ./backend:/app
+      - ./secrets:/secrets:ro
+    depends_on:
+      - redis
+    networks:
+      - vibevoice-network
+    command: uvicorn main:app --host 0.0.0.0 --port 5000 --reload
+
+  redis:
+    image: redis:7-alpine
+    container_name: vibevoice-redis-dev
+    ports:
+      - "6379:6379"
+    networks:
+      - vibevoice-network
+
+networks:
+  vibevoice-network:
+    driver: bridge

@@ -1,0 +1,42 @@
+VibeVoice Text Reader - Your Personal Reading Assistant
+
+Transform any text into natural, expressive speech with VibeVoice Text Reader. Whether you're reading books, articles, or documents, our advanced text-to-speech technology brings your content to life.
+
+KEY FEATURES:
+📚 Smart Text Processing
+• Automatic text chunking for optimal reading flow
+• Intelligent pause detection at sentence and paragraph breaks
+• Support for various text formats
+
+🎯 Advanced Playback Controls
+• Play, pause, and resume at any time
+• 30-second skip forward/backward for easy navigation
+• Adjustable reading speed (0.5x to 2.0x)
+• Chapter and section navigation
+
+🎨 Customizable Experience
+• Multiple voice options with natural intonation
+• Adjustable pitch and tone settings
+• Dark and light theme support
+• Font size adjustment for visual reading
+
+📱 User-Friendly Interface
+• Clean, intuitive design
+• Swipe gestures for quick navigation
+• Background playback support
+• Sleep timer for bedtime reading
+
+🔧 Additional Features
+• Bookmark favorite passages
+• Reading history and progress tracking
+• Offline mode for downloaded content
+• Export audio for later listening
+
+Perfect for:
+• Students studying course materials
+• Professionals reviewing documents
+• Book lovers enjoying literature
+• Language learners improving pronunciation
+• Anyone who prefers audio content
+
+VibeVoice Text Reader uses cutting-edge voice synthesis technology to deliver the most natural and pleasant listening experience. Start your audio reading journey today!

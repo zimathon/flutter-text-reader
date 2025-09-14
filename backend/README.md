@@ -1,143 +1,113 @@
 # VibeVoice API Server
 
-Google Cloud Text-to-Speech APIを使用した音声合成APIサーバー
+Text-to-Speech API server for the Flutter Text Reader application.
 
-## 機能
+## Features
 
-- テキストから音声（MP3）への変換
-- 日本語を含む多言語対応
-- Redisベースのキャッシング
-- レート制限（1分あたり60リクエスト）
-- Docker対応
-- 自動スケーリング対応
+- Google Cloud Text-to-Speech integration
+- Redis caching for audio data
+- Rate limiting
+- Multiple voice support (Japanese and English)
+- RESTful API with OpenAPI documentation
 
-## セットアップ
+## Prerequisites
 
-### 1. 環境変数の設定
+- Python 3.11+
+- Redis server
+- Google Cloud account with Text-to-Speech API enabled
+- Google Cloud service account credentials
 
-`.env.example`を`.env`にコピーして設定：
+## Installation
 
+1. Create virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Set up environment variables:
 ```bash
 cp .env.example .env
+# Edit .env with your configuration
 ```
 
-主要な設定項目：
-- `GOOGLE_APPLICATION_CREDENTIALS`: Google Cloud認証JSONファイルのパス
-- `REDIS_URL`: RedisサーバーのURL
-- `RATE_LIMIT_PER_MINUTE`: 分あたりのリクエスト制限
-- `CACHE_TTL_HOURS`: キャッシュの有効期限（時間）
+4. Configure Google Cloud credentials:
+- Create a service account in Google Cloud Console
+- Enable Text-to-Speech API
+- Download the credentials JSON file
+- Set the path in `.env` file
 
-### 2. Google Cloud認証の設定
+## Running the Server
 
-1. [Google Cloud Console](https://console.cloud.google.com/)でプロジェクトを作成
-2. Text-to-Speech APIを有効化
-3. サービスアカウントキーをダウンロード
-4. キーファイルを`secrets/gcp-key.json`に配置
-
-### 3. 起動方法
-
-#### Dockerを使用する場合（推奨）
-
+### Development
 ```bash
-# ビルドと起動
-docker-compose up -d
-
-# ログ確認
-docker-compose logs -f api
-
-# 停止
-docker-compose down
-```
-
-#### ローカル開発環境
-
-```bash
-# 仮想環境作成
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 依存関係インストール
-pip install -r requirements.txt
-
-# Redis起動（別ターミナル）
-redis-server
-
-# サーバー起動
 python main.py
 ```
 
-## APIエンドポイント
-
-### ヘルスチェック
-```
-GET /health
+### Production
+```bash
+uvicorn main:app --host 0.0.0.0 --port 5000 --workers 4
 ```
 
-### サーバー情報
-```
-GET /info
-```
-
-### 利用可能な音声リスト
-```
-GET /voices?language_code=ja-JP
+### Docker
+```bash
+docker build -t vibevoice-api .
+docker run -p 5000:5000 --env-file .env vibevoice-api
 ```
 
-### 音声合成
-```
-POST /synthesize
-Content-Type: application/json
+## API Endpoints
 
-{
-  "text": "こんにちは",
-  "voice": "ja-JP-Standard-A",
-  "speed": 1.0,
-  "pitch": 0.0,
-  "language": "ja-JP"
-}
-```
+- `GET /health` - Health check
+- `GET /info` - Server information
+- `GET /voices` - List available voices
+- `POST /synthesize` - Synthesize text to speech
+- `GET /cache/stats` - Cache statistics
+- `DELETE /cache` - Clear cache
 
-### キャッシュ統計
-```
-GET /cache/stats
-```
+## API Documentation
 
-### キャッシュクリア
-```
-DELETE /cache/clear
-```
+Once the server is running, visit:
+- Swagger UI: http://localhost:5000/docs
+- ReDoc: http://localhost:5000/redoc
 
-## テスト
+## Testing
 
 ```bash
-# テスト実行
-pytest
+# Basic health check
+curl http://localhost:5000/health
 
-# カバレッジ付きテスト
-pytest --cov=. --cov-report=html
+# Synthesize text
+curl -X POST http://localhost:5000/synthesize \
+  -H "Content-Type: application/json" \
+  -d '{"text": "こんにちは", "voice": "ja-JP-Standard-A"}' \
+  --output test.wav
 ```
 
-## パフォーマンス
+## Configuration
 
-- キャッシュヒット時: <10ms
-- 新規合成: 200-500ms（テキスト長による）
-- 同時接続数: 100+（Nginxでの制御）
-- メモリ使用: ~100MB（Redis含む）
+See `.env.example` for all available configuration options.
 
-## トラブルシューティング
+Key settings:
+- `MAX_TEXT_LENGTH`: Maximum text length (default: 5000)
+- `RATE_LIMIT_PER_MINUTE`: API rate limit (default: 60)
+- `CACHE_TTL_HOURS`: Cache expiration time (default: 24)
 
-### Google Cloud認証エラー
-- 環境変数`GOOGLE_APPLICATION_CREDENTIALS`が正しく設定されているか確認
-- サービスアカウントにText-to-Speech APIの権限があるか確認
+## Troubleshooting
 
-### Redis接続エラー
-- Redisサーバーが起動しているか確認
-- `REDIS_URL`が正しいか確認
+1. Redis connection error:
+   - Ensure Redis is running: `redis-cli ping`
+   - Check `REDIS_URL` in `.env`
 
-### レート制限エラー
-- 1分あたり60リクエストの制限があります
-- `Retry-After`ヘッダーの値だけ待機してください
+2. Google Cloud TTS error:
+   - Verify credentials file path
+   - Check API is enabled in Google Cloud Console
+   - Ensure service account has necessary permissions
 
-## ライセンス
-
-MIT
+3. Rate limit exceeded:
+   - Wait for rate limit window to reset
+   - Adjust `RATE_LIMIT_PER_MINUTE` if needed
